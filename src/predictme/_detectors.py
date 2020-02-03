@@ -99,7 +99,7 @@ class DarknetObjectDetector:
 
         :param image_path: Path to image file.
         :return: List of bounding boxes (as a list) that store result,
-                 [[xmin, ymin, xmax, ymax], [...], ..., [...]]
+                 [[[xmin, ymin], [xmax, ymax]], ..., [...]]
         """
 
         image = cv2.imread(image_path)
@@ -152,7 +152,8 @@ class CaffeObjectDetector:
             box = outs[0, 0, i, 3:7] * np.array([w, h, w, h])
             confidence = outs[0, 0, i, 2]
             if confidence > self._conf_threshold:
-                boxes.append([[box[0], box[1]], [box[2], box[3]]])
+                boxes.append([[int(box[0]), int(box[1])],
+                              [int(box[2]), int(box[3])]])
         return boxes
 
     def predict(self, image_path):
@@ -161,7 +162,7 @@ class CaffeObjectDetector:
 
         :param image_path: Path to image file.
         :return: List of bounding boxes (as a list) that store objects result,
-                 [[xmin, ymin, xmax, ymax], [...], ..., [...]]
+                 [[[xmin, ymin], [xmax, ymax]], ..., [...]]
         """
 
         image = cv2.imread(image_path)
