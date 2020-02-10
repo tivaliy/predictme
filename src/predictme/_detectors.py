@@ -93,16 +93,17 @@ class DarknetObjectDetector:
             final_boxes.append(box)
         return final_boxes
 
-    def predict(self, image_path):
+    def predict(self, file):
         """
         Predict objects on specified image.
 
-        :param image_path: Path to image file.
+        :param file: file-like object, string
         :return: List of bounding boxes (as a list) that store result,
                  [[[xmin, ymin], [xmax, ymax]], ..., [...]]
         """
 
-        image = cv2.imread(image_path)
+        np_img = np.fromfile(file, np.uint8)
+        image = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
 
         # Create a 4D blob from a image.
         blob = cv2.dnn.blobFromImage(
@@ -156,16 +157,17 @@ class CaffeObjectDetector:
                               [int(box[2]), int(box[3])]])
         return boxes
 
-    def predict(self, image_path):
+    def predict(self, file):
         """
         Predict objects on specified image.
 
-        :param image_path: Path to image file.
+        :param file: file-like object, string
         :return: List of bounding boxes (as a list) that store objects result,
                  [[[xmin, ymin], [xmax, ymax]], ..., [...]]
         """
 
-        image = cv2.imread(image_path)
+        np_img = np.fromfile(file, np.uint8)
+        image = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
 
         # Create a 4D blob from a image.
         blob = cv2.dnn.blobFromImage(
