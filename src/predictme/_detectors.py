@@ -89,7 +89,7 @@ class DarknetObjectDetector:
             box = boxes[i]
             left, top, width, height = box[0], box[1], box[2], box[3]
             xmin, ymin, xmax, ymax = to_point_form(left, top, width, height)
-            box = [[xmin, ymin], [xmax, ymax]]
+            box = [xmin, ymin, xmax, ymax]
             final_boxes.append(box)
         return final_boxes
 
@@ -99,7 +99,7 @@ class DarknetObjectDetector:
 
         :param file: file-like object, string
         :return: List of bounding boxes (as a list) that store result,
-                 [[[xmin, ymin], [xmax, ymax]], ..., [...]]
+                 [[xmin, ymin, xmax, ymax], ..., [...]]
         """
 
         np_img = np.fromfile(file, np.uint8)
@@ -153,8 +153,8 @@ class CaffeObjectDetector:
             box = outs[0, 0, i, 3:7] * np.array([w, h, w, h])
             confidence = outs[0, 0, i, 2]
             if confidence > self._conf_threshold:
-                boxes.append([[int(box[0]), int(box[1])],
-                              [int(box[2]), int(box[3])]])
+                boxes.append([int(box[0]), int(box[1]),
+                              int(box[2]), int(box[3])])
         return boxes
 
     def predict(self, file):
@@ -163,7 +163,7 @@ class CaffeObjectDetector:
 
         :param file: file-like object, string
         :return: List of bounding boxes (as a list) that store objects result,
-                 [[[xmin, ymin], [xmax, ymax]], ..., [...]]
+                 [[xmin, ymin, xmax, ymax], ..., [...]]
         """
 
         np_img = np.fromfile(file, np.uint8)
