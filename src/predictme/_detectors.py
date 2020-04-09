@@ -146,32 +146,46 @@ class CaffeObjectDetector:
         self.net.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
         self.net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
 
-    def _post_process(self, image, outs):
-        (h, w) = image.shape[:2]
-        boxes = []
-        for i in range(0, outs.shape[2]):
-            box = outs[0, 0, i, 3:7] * np.array([w, h, w, h])
-            confidence = outs[0, 0, i, 2]
+    def _post_process(self, images, detections):
+        """
+        Process detection results based on confidence threshold level.
+        """
+        # matrix result
+        boxes = [[] for _ in range(len(images))]
+        for i in range(0, detections.shape[2]):
+            img_index = int(detections[0, 0, i, 0])  # fetch image from batch
+            confidence = detections[0, 0, i, 2]
             if confidence > self._conf_threshold:
-                boxes.append([int(box[0]), int(box[1]),
-                              int(box[2]), int(box[3])])
+                (h, w) = images[img_index].shape[:2]
+                np_box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+                boxes[img_index].append(np_box.astype("int").tolist())
         return boxes
 
-    def predict(self, file):
+    def predict(self, files):
         """
-        Predict objects on specified image.
+        Predict objects on specified images.
 
-        :param file: file-like object, string
-        :return: List of bounding boxes (as a list) that store objects result,
-                 [[xmin, ymin, xmax, ymax], ..., [...]]
+        :param files: A list/tuple of file-like objects, strings
+        :return: List of bounding boxes list that stores detection results
+                 per image, [[[xmin, ymin, xmax, ymax]]], e.g.:
+                 [
+                   [[xmin, ymin, xmax, ymax]],  # <- 1
+                   [],  # <- No detections for second image
+                   [[xmin, ymin, xmax, ymax], [xmin, ymin, xmax, ymax]]  # <- 2
+                 ]
         """
 
-        np_img = np.fromfile(file, np.uint8)
-        image = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
+        if not isinstance(files, (list, tuple)):
+            files = [files]
 
-        # Create a 4D blob from a image.
-        blob = cv2.dnn.blobFromImage(
-            image,
+        np_images = [np.fromfile(file, np.uint8) for file in files]
+        images = [cv2.imdecode(np_img, cv2.IMREAD_COLOR)
+                  for np_img in np_images]
+
+        # TODO: There is a problem with prediction results if `images` list
+        #  size changed 'dynamically'.
+        blob = cv2.dnn.blobFromImages(
+            images,
             1.0,
             (self.image_width, self.image_height),
             (104, 177, 123),
@@ -183,9 +197,9 @@ class CaffeObjectDetector:
         self.net.setInput(blob)
 
         # Runs the forward pass to get output of the output layers
-        outs = self.net.forward()
+        detections = self.net.forward()
 
         # Remove the bounding boxes with low confidence
-        objects = self._post_process(image, outs)
+        objects = self._post_process(images, detections)
 
         return objects
